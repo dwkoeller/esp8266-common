@@ -32,8 +32,10 @@ void setup_wifi() {
     count++;
   }
 
-  espClient.setCertificate(certificates_esp8266_bin_crt, certificates_esp8266_bin_crt_len);
-  espClient.setPrivateKey(certificates_esp8266_bin_key, certificates_esp8266_bin_key_len);
+  espClient.setTrustAnchors(&caCertX509);
+  espClient.setKnownKey(&key);
+  espClient.allowSelfSignedCerts();
+  espClient.setFingerprint(fp);
 
   Serial.println("");
   Serial.println("WiFi connected");
