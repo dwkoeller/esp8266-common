@@ -122,16 +122,60 @@ void resetWatchdog() {
   digitalWrite(WATCHDOG_PIN, LOW);
 }
 
+String ip2Str(IPAddress ip){
+  String s="";
+  for (int i=0; i<4; i++) {
+    s += i  ? "." + String(ip[i]) : String(ip[i]);
+  }
+  return s;
+}
+
+void updateTelemetry(String heartbeat) {
+
+  String mac_address = WiFi_macAddressOf(espClient.localIP());
+  
+  String topic = String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + "/attributes";
+  String message = String("{\"firmware\": \"") + FIRMWARE_VERSION  +
+            String("\", \"mac_address\": \"") + mac_address +
+            String("\", \"heartbeat\": \"") + heartbeat +
+            String("\", \"ip_address\": \"") + ip2Str(espClient.localIP()) + String("\"}");
+  Serial.print("MQTT - ");
+  Serial.print(topic);
+  Serial.print(" : ");
+  Serial.println(message);
+  client.publish(topic.c_str(), message.c_str(), true);
+
+  topic = String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + "/state";
+  message = String(MQTT_DEVICE) + FIRMWARE_VERSION + "  |  " + ip2Str(espClient.localIP()) + "  |  " + String(heartbeat);
+  Serial.print("MQTT - ");
+  Serial.print(topic);
+  Serial.print(" : ");
+  Serial.println(message);
+  client.publish(topic.c_str(), message.c_str(), true);
+
+}
+
+void registerTelemetry() {
+  String topic = String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + "/config";
+  String message = String("{\"name\": \"") + HA_TELEMETRY + "-" + MQTT_DEVICE +
+                   String("\", \"json_attributes_topic\": \"") + String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + 
+                   String("/attributes\", \"state_topic\": \"") + String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) +
+                   String("/state\"}");
+  Serial.print("MQTT - ");
+  Serial.print(topic);
+  Serial.print(" : ");
+  Serial.println(message.c_str());
+
+  client.publish(topic.c_str(), message.c_str(), true);  
+  
+}
+
 void reconnect() {
   //Reconnect to Wifi and to MQTT. If Wifi is already connected, then autoconnect doesn't do anything.
   Serial.print("Attempting MQTT connection...");
   if (client.connect(MQTT_DEVICE, MQTT_USER, MQTT_PASSWORD)) {
     Serial.println("connected");
     client.subscribe(MQTT_HEARTBEAT_SUB);
-    String firmwareVer = String("Firmware Version: ") + String(FIRMWARE_VERSION);
-    String compileDate = String("Build Date: ") + String(compile_date);
-    client.publish(MQTT_VERSION_PUB, firmwareVer.c_str(), true);
-    client.publish(MQTT_COMPILE_PUB, compileDate.c_str(), true);
   } else {
     Serial.print("failed, rc=");
     Serial.print(client.state());
