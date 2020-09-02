@@ -1,3 +1,6 @@
+String UpdateServerIP;
+String MQTTServerIP;
+
 void fwTicker() {
   readyForFwUpdate = true;
 }
@@ -64,6 +67,8 @@ String WiFi_macAddressOf(IPAddress aIp) {
   return String("00-00-00-00-00-00");
 }
 
+
+
 void checkForUpdates() {
 
   String clientMAC = WiFi_macAddressOf(espClient.localIP());
@@ -73,7 +78,20 @@ void checkForUpdates() {
   clientMAC.replace(":", "-");
   String filename = clientMAC.substring(9);
   String firmware_URL = String(UPDATE_SERVER) + filename + String(FIRMWARE_VERSION);
-  String current_firmware_version_URL = String(UPDATE_SERVER) + filename + String("-current_version");
+  String current_firmware_version_URL = String(UPDATE_URL) + filename + String("-current_version");
+
+  IPAddress result;
+  int err = WiFi.hostByName(UPDATE_SERVER, result) ;
+  if(err == 1){
+        Serial.print("Update Server IP address: ");
+        Serial.println(result);
+        UpdateServerIP = String(result.toString());
+  } else {
+        Serial.print("Error code: ");
+        Serial.println(err);
+  }
+
+  Serial.println(current_firmware_version_URL);
 
   HTTPClient http;
 
@@ -130,6 +148,11 @@ String ip2Str(IPAddress ip){
   return s;
 }
 
+String getUUID() {
+  String uuid =  '-' + WiFi_macAddressOf(espClient.localIP());
+  return uuid;
+}
+
 void updateTelemetry(String heartbeat) {
 
   String mac_address = WiFi_macAddressOf(espClient.localIP());
@@ -137,6 +160,8 @@ void updateTelemetry(String heartbeat) {
   String topic = String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + "/attributes";
   String message = String("{\"firmware\": \"") + FIRMWARE_VERSION  +
             String("\", \"mac_address\": \"") + mac_address +
+            String("\", \"update_server\": \"") + UpdateServerIP +
+            String("\", \"mqtt_server\": \"") + MQTTServerIP +
             String("\", \"heartbeat\": \"") + heartbeat +
             String("\", \"ip_address\": \"") + ip2Str(espClient.localIP()) + String("\"}");
   Serial.print("MQTT - ");
@@ -146,7 +171,7 @@ void updateTelemetry(String heartbeat) {
   client.publish(topic.c_str(), message.c_str(), true);
 
   topic = String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + "/state";
-  message = String(MQTT_DEVICE) + FIRMWARE_VERSION + "  |  " + ip2Str(espClient.localIP()) + "  |  " + String(heartbeat);
+  message = String(MQTT_DEVICE);
   Serial.print("MQTT - ");
   Serial.print(topic);
   Serial.print(" : ");
