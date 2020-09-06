@@ -77,7 +77,7 @@ void checkForUpdates() {
   Serial.println(clientMAC);
   clientMAC.replace(":", "-");
   String filename = clientMAC.substring(9);
-  String firmware_URL = String(UPDATE_SERVER) + filename + String(FIRMWARE_VERSION);
+  String firmware_URL = String(UPDATE_URL) + filename + String(FIRMWARE_VERSION);
   String current_firmware_version_URL = String(UPDATE_URL) + filename + String("-current_version");
 
   IPAddress result;
@@ -85,7 +85,7 @@ void checkForUpdates() {
   if(err == 1){
         Serial.print("Update Server IP address: ");
         Serial.println(result);
-        UpdateServerIP = String(result.toString());
+        UpdateServerIP = result.toString();
   } else {
         Serial.print("Error code: ");
         Serial.println(err);
@@ -110,7 +110,7 @@ void checkForUpdates() {
     
     if(newFirmwareVersion.substring(1).toFloat() > String(FIRMWARE_VERSION).substring(1).toFloat()) {
       Serial.println( "Preparing to update" );
-      String new_firmware_URL = String(UPDATE_SERVER) + filename + newFirmwareVersion + ".bin";
+      String new_firmware_URL = String(UPDATE_URL) + filename + newFirmwareVersion + ".bin";
       Serial.println(new_firmware_URL);
       t_httpUpdate_return ret = ESPhttpUpdate.update( new_firmware_URL );
 
@@ -162,6 +162,7 @@ void updateTelemetry(String heartbeat) {
             String("\", \"mac_address\": \"") + mac_address +
             String("\", \"update_server\": \"") + UpdateServerIP +
             String("\", \"mqtt_server\": \"") + MQTTServerIP +
+            String("\", \"compile_date\": \"") + compile_date +
             String("\", \"heartbeat\": \"") + heartbeat +
             String("\", \"ip_address\": \"") + ip2Str(espClient.localIP()) + String("\"}");
   Serial.print("MQTT - ");
