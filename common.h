@@ -1,3 +1,5 @@
+#include <uptime.h>
+
 String UpdateServerIP;
 String MQTTServerIP;
 
@@ -112,7 +114,7 @@ void checkForUpdates() {
       Serial.println( "Preparing to update" );
       String new_firmware_URL = String(UPDATE_URL) + filename + newFirmwareVersion + ".bin";
       Serial.println(new_firmware_URL);
-      t_httpUpdate_return ret = ESPhttpUpdate.update( new_firmware_URL );
+      t_httpUpdate_return ret = ESPhttpUpdate.update(new_firmware_URL );
 
       switch(ret) {
         case HTTP_UPDATE_FAILED:
@@ -155,6 +157,8 @@ String getUUID() {
 
 void updateTelemetry(String heartbeat) {
 
+  uptime::calculateUptime();
+
   String mac_address = WiFi_macAddressOf(espClient.localIP());
   
   String topic = String(MQTT_DISCOVERY_SENSOR_PREFIX) + HA_TELEMETRY + "-" + String(MQTT_DEVICE) + "/attributes";
@@ -164,6 +168,7 @@ void updateTelemetry(String heartbeat) {
             String("\", \"mqtt_server\": \"") + MQTTServerIP +
             String("\", \"compile_date\": \"") + compile_date +
             String("\", \"heartbeat\": \"") + heartbeat +
+            String("\", \"uptime\": \"") + uptime::getDays() + "d:" + uptime::getHours() + "h:" + uptime::getMinutes() + "m:" + uptime::getSeconds() + "s" +
             String("\", \"ip_address\": \"") + ip2Str(espClient.localIP()) + String("\"}");
   Serial.print("MQTT - ");
   Serial.print(topic);
